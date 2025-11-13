@@ -5,61 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library Management System</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
         /* General Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: #f4f7f9; /* Light grey background */
+            font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+            background-color: #f4f7f9;
             color: #333;
             min-height: 100vh;
+            transition: background-color 0.3s ease;
+        }
+        body.auth-active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
         }
+        
         .container {
             max-width: 1400px;
-            margin: 0 auto;
-            background: #ffffff; /* White container */
+            margin: 20px auto;
+            background: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
             overflow: hidden;
         }
         .header {
-            background-color: #3b82f6; /* Medium blue header */
+            background-color: #3b82f6;
             color: white;
             padding: 25px 30px;
             text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .header h1 { font-size: 2em; }
+        .header h1 { 
+            font-size: 2em; 
+            margin: 0; 
+            font-weight: 600; 
+        }
         .nav-tabs {
             display: flex;
-            background: #eef2f5; /* Lighter grey for tabs background */
+            background: #eef2f5;
             padding: 0;
-            border-bottom: 2px solid #d1d5db; /* Light grey border */
+            border-bottom: 2px solid #d1d5db;
             flex-wrap: wrap;
         }
         .nav-tab {
-            flex: 1;
+            /* flex: 1; <-- This was removed to make tabs fit content */
             min-width: 120px;
             padding: 15px 20px;
             background: none;
             border: none;
             cursor: pointer;
             font-size: 15px;
-            color: #4b5563; /* Darker grey text */
+            font-weight: 500;
+            color: #4b5563;
             transition: background-color 0.2s ease, color 0.2s ease;
             text-align: center;
         }
         .nav-tab:hover {
-            background-color: #dbeafe; /* Light blue hover */
-            color: #1d4ed8; /* Darker blue text */
+            background-color: #dbeafe;
+            color: #1d4ed8;
         }
         .nav-tab.active {
             background: #ffffff;
-            color: #2563eb; /* Active tab blue text */
+            color: #2563eb;
             font-weight: 600;
-            border-bottom: 3px solid #3b82f6; /* Active tab blue border */
-            margin-bottom: -2px; /* Align border */
+            border-bottom: 3px solid #3b82f6;
+            margin-bottom: -2px;
         }
-        .content { padding: 30px; min-height: 500px; }
+        .content { padding: 30px; }
 
         /* Forms */
         .form-group { margin-bottom: 20px; }
@@ -67,15 +84,16 @@
         .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
-            border: 1px solid #d1d5db; /* Grey border */
+            border: 1px solid #d1d5db;
             border-radius: 8px;
             font-size: 16px;
             background-color: #fff;
             transition: border-color 0.2s ease;
+            font-family: 'Poppins', sans-serif;
         }
         .form-group input:focus, .form-group select:focus {
             outline: none;
-            border-color: #3b82f6; /* Blue border on focus */
+            border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
         }
 
@@ -89,59 +107,204 @@
             font-weight: 500;
             margin: 5px;
             color: white;
-            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
         }
-        /* Make edit button slightly different */
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
         .btn-primary { background-color: #3b82f6; } .btn-primary:hover { background-color: #2563eb; box-shadow: 0 2px 5px rgba(59, 130, 246, 0.3); }
         .btn-success { background-color: #10b981; } .btn-success:hover { background-color: #059669; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3); }
         .btn-danger { background-color: #ef4444; } .btn-danger:hover { background-color: #dc2626; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3); }
         .btn-warning { background-color: #f59e0b; color: #fff; } .btn-warning:hover { background-color: #d97706; box-shadow: 0 2px 5px rgba(245, 158, 11, 0.3); }
-
+        
         /* Tables */
         .table-container { overflow-x: auto; margin-top: 20px; }
-        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e5e7eb; /* Lighter grey border */ }
-        thead tr { background-color: #f9fafb; /* Very light grey header */ color: #374151; font-weight: 600; text-transform: uppercase; font-size: 0.9em; letter-spacing: 0.5px;}
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background-color: white; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            border-radius: 8px; 
+            overflow: hidden; 
+        }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+        thead tr { background-color: #f9fafb; color: #374151; font-weight: 600; text-transform: uppercase; font-size: 0.9em; letter-spacing: 0.5px;}
         tbody tr { transition: background-color 0.15s ease; }
-        /* Add cursor for member row click */
-        tbody tr.clickable:hover { background-color: #f3f4f6; cursor: pointer; }
+        tbody tr.clickable:hover { background-color: #f3f4f6; cursor: pointer; } 
+        .book-cover-img {
+            width: 50px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 4px;
+            background-color: #eee;
+        }
 
         /* Search Filter */
         .filter-container { margin-bottom: 20px; max-width: 400px; }
         .filter-container input { width: 100%; padding: 10px 15px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; }
 
-        /* --- NEW MODAL STYLES (from your demo) --- */
+        /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
-        .modal-content { background-color: #fff; padding: 30px; width: 90%; max-width: 550px; border-radius: 10px; position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.2); animation: fadeIn 0.3s; }
+        .modal-content { 
+            background-color: #fff; 
+            padding: 30px; 
+            width: 90%; 
+            max-width: 550px; 
+            border-radius: 10px; 
+            position: relative; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1); 
+            animation: fadeIn 0.3s; 
+        }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .modal-close { color: #9ca3af; position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; } .modal-close:hover { color: #374151; }
-        #member-borrowed-list { list-style: none; padding: 0; margin-top: 15px; max-height: 200px; overflow-y: auto; }
-        #member-borrowed-list li { background: #f3f4f6; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 0.95em;}
-        #member-borrowed-list strong { color: #1d4ed8; }
-        .modal h2 { margin-bottom: 15px; color: #1f2937; }
-        /* --- END NEW MODAL STYLES --- */
+        #member-borrowed-list, #student-borrowed-list { list-style: none; padding: 0; margin-top: 15px; max-height: 200px; overflow-y: auto; }
+        #member-borrowed-list li, #student-borrowed-list li { background: #f3f4f6; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 0.95em;}
+        #member-borrowed-list strong, #student-borrowed-list strong { color: #1d4ed8; }
+        .modal h2 { margin-bottom: 15px; color: #1f2937; font-weight: 600; }
 
         /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: #ffffff; border: 1px solid #e5e7eb; color: #374151; padding: 25px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); }
         .stat-number { font-size: 2.2em; font-weight: 600; color: #3b82f6; margin-bottom: 5px; }
 
-        /* Alerts (from your design) */
+        /* Alerts */
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid transparent; }
         .alert-success { background-color: #d1fae5; border-color: #a7f3d0; color: #065f46; }
         .alert-error { background-color: #fee2e2; border-color: #fecaca; color: #991b1b; }
+        
+        /* UPDATED LOGIN PAGE STYLES */
+        #auth-container {
+            max-width: 900px;
+            width: 100%;
+            display: none; /* JS will show this */
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+            overflow: hidden;
+        }
+        .auth-header {
+            text-align: center; 
+            padding: 30px; 
+            background: #f9fafb; 
+            border-bottom: 1px solid #eef2f5;
+        }
+        .auth-header h1 {
+            color: #3b82f6;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        .auth-header p {
+            font-size: 1.1em; 
+            color: #4b5563; 
+            margin-top: 5px;
+        }
+        .auth-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+        .auth-grid > div {
+            padding: 40px;
+        }
+        .auth-grid > div:first-child {
+            border-right: 1px solid #eef2f5;
+        }
+        .auth-grid h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #1f2937;
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .auth-grid {
+                grid-template-columns: 1fr; /* Stack on mobile */
+            }
+            .auth-grid > div:first-child {
+                border-right: none;
+                border-bottom: 1px solid #eef2f5;
+            }
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+        
+        /* My Account Page Styles */
+        #my-account-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        #my-account-fines .stat-number {
+            color: #ef4444; /* Red for fines */
+        }
+        @media (max-width: 768px) {
+            #my-account-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header"><h1>📚 Library Management System</h1></div>
+<body class="auth-active"> <div id="auth-container">
+        <div class="auth-header">
+            <h1>📚 Library Management System</h1>
+            <p>Welcome! Please log in or register.</p>
+        </div>
+        
+        <div class="content auth-grid">
+            
+            <div>
+                <h2>Admin / Student Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                </form>
+            </div>
+            
+            <div>
+                <h2>New Student? Register</h2>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="register-name">Full Name</label>
+                        <input type="text" id="register-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-success" style="width: 100%;">Register</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+
+    <div id="app-container" class="container" style="display: none;">
+        <div class="header">
+            <h1>📚 Library Management System</h1>
+            <button id="logout-btn" class="btn btn-danger">Logout</button>
+        </div>
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="showTab(event, 'dashboard')">Dashboard</button>
-            <button class="nav-tab" onclick="showTab(event, 'books')">Books</button>
-            <button class="nav-tab" onclick="showTab(event, 'members')">Members</button>
-            <button class="nav-tab" onclick="showTab(event, 'borrow')">Borrow/Return</button>
-            <button class="nav-tab" onclick="showTab(event, 'add-book')">Add Book</button>
-            <button class="nav-tab" onclick="showTab(event, 'add-member')">Add Member</button>
+            <button class="nav-tab active" data-tab="dashboard" onclick="showTab(event, 'dashboard')">Dashboard</button>
+            <button class="nav-tab" data-tab="books" onclick="showTab(event, 'books')">Books</button>
+            <button class="nav-tab student-only" data-tab="my-account" onclick="showTab(event, 'my-account')">My Account</button>
+            <button class="nav-tab admin-only" data-tab="members" onclick="showTab(event, 'members')">Members</button>
+            <button class="nav-tab admin-only" data-tab="borrow" onclick="showTab(event, 'borrow')">Borrow/Return</button>
+            <button class="nav-tab admin-only" data-tab="add-book" onclick="showTab(event, 'add-book')">Add Book</button>
+            <button class="nav-tab admin-only" data-tab="add-member" onclick="showTab(event, 'add-member')">Add Member</button>
         </div>
 
         <div class="content">
@@ -157,6 +320,26 @@
                 </div>
             </div>
 
+            <div id="my-account" class="tab-content student-only" style="display: none;">
+                <h2 id="my-account-name">My Account</h2>
+                <div id="my-account-grid">
+                    <div class="stat-card" id="my-account-fines">
+                        <div class="stat-number" id="my-fines-amount">₹0.00</div>
+                        <div>Outstanding Fines</div>
+                        <button class="btn btn-warning" id="my-fines-pay-btn" style="display: none; margin-top: 15px;">Pay Fine Now</button>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="my-books-borrowed">0</div>
+                        <div>Books Currently Borrowed</div>
+                    </div>
+                </div>
+                <div class="card" style="margin-top: 30px;">
+                    <h3>My Borrowed Books</h3>
+                    <ul id="student-borrowed-list">
+                        </ul>
+                </div>
+            </div>
+
             <div id="books" class="tab-content" style="display: none;">
                 <h2>Book Catalog</h2>
                 <div class="filter-container">
@@ -164,13 +347,22 @@
                 </div>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Title</th><th>Author</th><th>Genre</th><th>Year</th><th>Available</th><th>Actions</th></tr></thead>
+                        <thead><tr>
+                            <th>Cover</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Genre</th>
+                            <th>Year</th>
+                            <th>Available</th>
+                            <th class="admin-only">Actions</th>
+                            <th class="student-only">Actions</th>
+                        </tr></thead>
                         <tbody id="books-list"></tbody>
                     </table>
                 </div>
             </div>
 
-            <div id="members" class="tab-content" style="display: none;">
+            <div id="members" class="tab-content admin-only" style="display: none;">
                 <h2>Library Members</h2>
                 <div class="table-container">
                     <table>
@@ -180,7 +372,7 @@
                 </div>
             </div>
 
-            <div id="borrow" class="tab-content" style="display: none;">
+            <div id="borrow" class="tab-content admin-only" style="display: none;">
                 <h2>Borrow / Return Books</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div><h3>Borrow Book</h3><form id="borrow-form"><div class="form-group"><label>Select Member</label><select id="borrow-member" required></select></div><div class="form-group"><label>Select Book</label><select id="borrow-book" required></select></div><div class="form-group"><label>Return Date</label><input type="date" id="return-date" required></div><button type="submit" class="btn btn-primary">Borrow Book</button></form></div>
@@ -188,12 +380,13 @@
                 </div>
             </div>
 
-            <div id="add-book" class="tab-content" style="display: none;">
+            <div id="add-book" class="tab-content admin-only" style="display: none;">
                 <h2>Add New Book</h2>
                 <form id="add-book-form" style="max-width: 600px;">
                     <div class="form-group"><label>Book Title</label><input type="text" id="add-book-title" required></div>
                     <div class="form-group"><label>Author</label><input type="text" id="add-book-author" required></div>
                     <div class="form-group"><label>ISBN</label><input type="text" id="add-book-isbn"></div>
+                    <div class="form-group"><label>Cover Image URL</label><input type="text" id="add-book-cover" placeholder="http://example.com/image.jpg"></div>
                     <div class="form-group"><label>Genre</label><input type="text" id="add-book-genre"></div>
                     <div class="form-group"><label>Year Published</label><input type="number" id="add-book-year"></div>
                     <div class="form-group"><label>Copies</label><input type="number" id="add-book-copies" min="1" value="1" required></div>
@@ -201,7 +394,7 @@
                 </form>
             </div>
 
-            <div id="add-member" class="tab-content" style="display: none;">
+            <div id="add-member" class="tab-content admin-only" style="display: none;">
                 <h2>Add New Member</h2>
                 <form id="add-member-form" style="max-width: 600px;">
                     <div class="form-group"><label>Full Name</label><input type="text" id="add-member-name" required></div>
@@ -235,9 +428,7 @@
             <span class="modal-close" onclick="closeModal('qr-modal')">&times;</span>
             <h2 id="qr-modal-title">Pay Outstanding Fine</h2>
             <p>Please scan the QR code below to pay the fine.</p>
-
             <img src="qr-code.jpg" alt="UPI QR Code" style="width: 250px; max-width: 80%; margin: 20px auto; display: block;">
-
             <p style="font-size: 1.2em; font-weight: bold;" id="qr-amount-text"></p>
             <p style="font-size: 0.9em; color: #666; margin-top: 15px;">After payment is complete, click "Confirm Payment" to clear the fine in the system.</p>
             <button id="qr-confirm-btn" class="btn btn-success" style="margin-top: 20px;">Confirm Payment</button>
@@ -249,6 +440,10 @@
         let allBooks = [];
         let allMembers = [];
         let allBorrowed = [];
+
+        // --- Get Page Elements ---
+        const authContainer = document.getElementById('auth-container');
+        const appContainer = document.getElementById('app-container');
 
         // --- UTILITY FUNCTIONS ---
         function showAlert(message, type = 'success') {
@@ -272,15 +467,22 @@
                         options.body = JSON.stringify(data);
                     }
                     const response = await fetch(API_URL + url, options);
-
-                    if (response.status === 204) return null;
-
-                    const resData = await response.json();
+                    
+                    if (response.status === 204) return null; // Handle No Content
 
                     if (!response.ok) {
-                        throw new Error(resData.message || 'An error occurred');
+                        let errorMsg = `HTTP error! Status: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMsg = errorData.message || errorMsg;
+                        } catch (e) {
+                            errorMsg = "Server returned an unexpected response. Check API_URL.";
+                        }
+                        throw new Error(errorMsg);
                     }
-                    return resData;
+                    
+                    return await response.json();
+
                 } catch (error) {
                     console.error('API Error:', error.message);
                     showAlert(`Error: ${error.message}`, 'error');
@@ -293,23 +495,119 @@
             put: (url, data) => http.request(url, 'PUT'),
         };
 
-        // --- MODAL FUNCTIONS ---
-        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
-        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        // --- MODAL FUNCTIONS (with fix) ---
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+            } else {
+                console.error('Error: Modal not found with ID:', modalId);
+                showAlert('Error: A popup modal is missing.', 'error');
+            }
+        }
+        function closeModal(modalId) { 
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none'; 
+            }
+        }
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
             }
         }
 
+        // --- AUTH & NAVIGATION LOGIC ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = localStorage.getItem('currentUser');
+            if (user) {
+                showApp(JSON.parse(user));
+            } else {
+                showLogin();
+            }
+        });
+
+        function showLogin() {
+            localStorage.removeItem('currentUser');
+            authContainer.style.display = 'block';
+            appContainer.style.display = 'none';
+            document.body.classList.add('auth-active'); 
+        }
+
+        function showApp(user) {
+            authContainer.style.display = 'none';
+            appContainer.style.display = 'block';
+            document.body.classList.remove('auth-active'); 
+
+            // Show/Hide elements based on role
+            const adminElements = document.querySelectorAll('.admin-only');
+            const studentElements = document.querySelectorAll('.student-only');
+            
+            if (user.role === 'admin') {
+                adminElements.forEach(el => el.style.display = '');
+                studentElements.forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.nav-tab.admin-only').forEach(el => el.style.display = 'block');
+                document.querySelector('th.admin-only').style.display = '';
+            } else { // Student
+                adminElements.forEach(el => el.style.display = 'none');
+                studentElements.forEach(el => el.style.display = '');
+                document.querySelectorAll('.nav-tab.student-only').forEach(el => el.style.display = 'block');
+                document.querySelector('th.student-only').style.display = '';
+            }
+            
+            showTab(null, 'dashboard');
+            document.querySelector('.nav-tab[data-tab="dashboard"]').classList.add('active');
+            loadDashboard();
+        }
+
+        // Login Form Handler
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                const user = await http.post('/login', { email, password });
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showApp(user);
+            } catch (error) {}
+        });
+
+        // Register Form Handler (UPDATED)
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            try {
+                await http.post('/register', { name, email, password });
+                showAlert('Registration successful! Please log in.', 'success');
+                e.target.reset();
+                document.getElementById('login-email').value = email;
+            } catch (error) {}
+        });
+
+        // Logout Button Handler
+        document.getElementById('logout-btn').addEventListener('click', showLogin);
+
+        // --- (End of new Auth logic) ---
+
+
         // --- Navigation ---
         function showTab(event, tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
             document.getElementById(tabName).style.display = 'block';
-            event.currentTarget.classList.add('active');
+            
+            if (event) { 
+                 event.currentTarget.classList.add('active');
+            } else {
+                const tabButton = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+                if (tabButton) tabButton.classList.add('active');
+            }
 
             if (tabName === 'dashboard') loadDashboard();
+            if (tabName === 'my-account') loadMyAccount();
             if (tabName === 'books') loadBooks();
             if (tabName === 'members') loadMembers();
             if (tabName === 'borrow') loadBorrowPage();
@@ -326,7 +624,43 @@
             } catch (error) {}
         }
 
-        // --- Books Page ---
+        // --- NEW: My Account Page ---
+        async function loadMyAccount() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return showLogin();
+            
+            try {
+                const profile = await http.get(`/my-profile/${user.id}`);
+                
+                document.getElementById('my-account-name').textContent = `Welcome, ${profile.name}`;
+                document.getElementById('my-fines-amount').textContent = `₹${parseFloat(profile.outstandingFines).toFixed(2)}`;
+                document.getElementById('my-books-borrowed').textContent = profile.booksBorrowed;
+
+                const payBtn = document.getElementById('my-fines-pay-btn');
+                if (profile.outstandingFines > 0) {
+                    payBtn.style.display = 'block';
+                    // This re-uses the admin's payfine logic, but just for this member
+                    payBtn.onclick = () => showPayModal(profile.memberId, profile.outstandingFines);
+                } else {
+                    payBtn.style.display = 'none';
+                }
+
+                const bookList = document.getElementById('student-borrowed-list');
+                bookList.innerHTML = '';
+                if (profile.borrowedBooksList.length === 0) {
+                    bookList.innerHTML = '<li>You have no books currently borrowed.</li>';
+                } else {
+                    profile.borrowedBooksList.forEach(book => {
+                        bookList.innerHTML += `<li><span>${book.bookTitle}</span><strong>Due: ${book.dueDate}</strong></li>`;
+                    });
+                }
+            } catch (error) {
+                showAlert('Could not load your profile. Please log in again.', 'error');
+                showLogin();
+            }
+        }
+
+        // --- Books Page (UPDATED) ---
         async function loadBooks() {
             try {
                 const searchTerm = document.getElementById('book-search').value.toLowerCase();
@@ -334,25 +668,66 @@
                 const tableBody = document.getElementById('books-list');
                 tableBody.innerHTML = '';
                 if (allBooks.length === 0) {
-                     tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No books found.</td></tr>';
+                     tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No books found.</td></tr>';
                      return;
                 }
+                
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                
                 allBooks.forEach(book => {
+                    const isAdmin = user.role === 'admin';
+                    const isAvailable = book.available > 0;
+                    
                     tableBody.innerHTML += `
                         <tr>
+                            <td><img src="${book.coverImageURL || 'https://via.placeholder.com/50x70.png?text=No+Image'}" alt="Cover" class="book-cover-img"></td>
                             <td>${book.title}</td>
                             <td>${book.author}</td>
                             <td>${book.genre || 'N/A'}</td>
                             <td>${book.year || 'N/A'}</td>
                             <td>${book.available} / ${book.copies}</td>
-                            <td>
+                            
+                            ${isAdmin ? `
+                            <td class="admin-only">
                                 <button class="btn btn-primary" onclick="editBook(${book.id})">Edit</button>
                                 <button class="btn btn-danger" onclick="deleteBook(${book.id})">Delete</button>
                             </td>
+                            ` : `
+                            <td class="student-only">
+                                <button class="btn btn-success" onclick="studentBorrow(${book.id})" ${!isAvailable ? 'disabled' : ''}>
+                                    ${isAvailable ? 'Borrow' : 'Unavailable'}
+                                </button>
+                            </td>
+                            `}
                         </tr>
                     `;
                 });
             } catch (error) {}
+        }
+        
+        // --- NEW: Student Borrow Function ---
+        async function studentBorrow(bookId) {
+            if (!confirm("Are you sure you want to borrow this book for 2 weeks?")) return;
+            
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (!user) return showLogin();
+            
+            const today = new Date();
+            today.setDate(today.getDate() + 14);
+            const dueDate = today.toISOString().split('T')[0];
+            
+            try {
+                await http.post('/student/borrow', {
+                    bookId: bookId,
+                    dueDate: dueDate,
+                    userId: user.id
+                });
+                showAlert('Book borrowed successfully!', 'success');
+                loadBooks(); // Refresh list
+                loadDashboard(); // Refresh stats
+            } catch (error) {
+                // Alert shown by http handler
+            }
         }
 
         // Add Book Form
@@ -365,9 +740,9 @@
                 genre: document.getElementById('add-book-genre').value,
                 year: parseInt(document.getElementById('add-book-year').value) || null,
                 copies: parseInt(document.getElementById('add-book-copies').value),
+                coverImageURL: document.getElementById('add-book-cover').value
             };
 
-            // Validation Check
             if (!book.title || !book.author || !book.copies) {
                 showAlert('Title, Author, and Copies are required fields.', 'error');
                 return;
@@ -435,13 +810,13 @@
                 email: document.getElementById('add-member-email').value,
             };
 
-            // Validation Check
             if (!member.name) {
                 showAlert('Name is a required field.', 'error');
                 return;
             }
 
             try {
+                // This route is admin-only, and will create an un-linked member
                 await http.post('/members', member);
                 showAlert('Member added successfully!', 'success');
                 e.target.reset();
@@ -464,7 +839,8 @@
             try {
                 const res = await http.post(`/members/${id}/pay-fines`);
                 showAlert(res.message, 'success');
-                loadMembers(); // Refresh the list
+                loadMembers(); // Refresh admin list
+                loadMyAccount(); // Refresh student list
             } catch (error) {}
         }
 
@@ -501,7 +877,8 @@
             formBody.innerHTML = `
                 <div class="form-group"><label>Book Title</label><input type="text" id="edit-book-title" value="${book.title}" required></div>
                 <div class="form-group"><label>Author</label><input type="text" id="edit-book-author" value="${book.author}" required></div>
-                <div class="form-group"><label>ISBN</label><input type="text" id="edit-book-isbn" value="${book.isbn || ''}"></div>
+                <div class.form-group"><label>ISBN</label><input type="text" id="edit-book-isbn" value="${book.isbn || ''}"></div>
+                <div class="form-group"><label>Cover Image URL</label><input type="text" id="edit-book-cover" value="${book.coverImageURL || ''}"></div>
                 <div class="form-group"><label>Genre</label><input type="text" id="edit-book-genre" value="${book.genre || ''}"></div>
                 <div class="form-group"><label>Year Published</label><input type="number" id="edit-book-year" value="${book.year || ''}"></div>
                 <div class="form-group"><label>Copies</label><input type="number" id="edit-book-copies" value="${book.copies}" min="1" required></div>
@@ -521,9 +898,9 @@
                 genre: document.getElementById('edit-book-genre').value,
                 year: parseInt(document.getElementById('edit-book-year').value) || null,
                 copies: parseInt(document.getElementById('edit-book-copies').value),
+                coverImageURL: document.getElementById('edit-book-cover').value
             };
 
-            // Validation Check
             if (!updatedBook.title || !updatedBook.author || !updatedBook.copies) {
                 showAlert('Title, Author, and Copies cannot be empty.', 'error');
                 return;
@@ -563,7 +940,6 @@
                 email: document.getElementById('edit-member-email').value,
             };
 
-            // Validation Check
             if (!updatedMember.name) {
                 showAlert('Name cannot be empty.', 'error');
                 return;
@@ -576,7 +952,7 @@
                 loadMembers();
             } catch (error) {}
         }
-
+        
         // --- PAYMENT MODAL FUNCTIONS ---
         function showPayModal(id, amount) {
             document.getElementById('qr-amount-text').textContent = `Amount to Pay: ₹${amount.toFixed(2)}`;
@@ -642,7 +1018,7 @@
                 loadDashboard();
             } catch (error) {}
         });
-
+        
         document.getElementById('return-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const returnData = {
@@ -656,11 +1032,6 @@
                 loadDashboard();
                 loadMembers();
             } catch (error) {}
-        });
-
-        // --- Initial Load ---
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDashboard();
         });
 
     </script>

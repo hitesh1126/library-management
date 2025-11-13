@@ -1,8 +1,8 @@
-// File: server.js (MySQL Version with EDIT routes)
+// File: server.js (MySQL Version with Student Account Page)
 const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2/promise'); // Use the promise-based version
-require('dotenv').config(); // Load environment variables from .env
+const mysql = require('mysql2/promise');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +11,7 @@ const DAILY_FINE_RATE = 100;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname)); // To serve index.html
+app.use(express.static(__dirname));
 
 let db;
 
@@ -25,6 +25,8 @@ let db;
             database: process.env.DB_NAME,
             waitForConnections: true,
             connectionLimit: 10,
+            queueLimit: 0,
+            connectionLimit: 10,
             queueLimit: 0
         });
         console.log('✅ Successfully connected to the MySQL database!');
@@ -34,13 +36,167 @@ let db;
     }
 })();
 
-// --- API ROUTES (Using MySQL) ---
+// --- ============================ ---
+// --- AUTHENTICATION ROUTES ---
+// --- ============================ ---
+
+// 1. Student Registration (NOW UPDATED)
+app.post('/api/register', async (req, res) => {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+        return res.status(400).json({ message: 'Name, email, and password are required.' });
+    }
+
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+        // Step 1: Create the 'user' for login
+        const [userResult] = await connection.query(
+            'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
+            [email, password, 'student']
+        );
+        const newUserId = userResult.insertId;
+
+        // Step 2: Create the 'member' for borrowing, linking it to the user
+        const joinDate = new Date().toISOString().split('T')[0];
+        await connection.query(
+            'INSERT INTO members (name, email, joinDate, userId) VALUES (?, ?, ?, ?)',
+            [name, email, joinDate, newUserId]
+        );
+        
+        await connection.commit();
+        res.status(201).json({ id: newUserId, email, role: 'student', name });
+        
+    } catch (err) {
+        await connection.rollback(); // Undo changes if anything failed
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'This email is already registered.' });
+        }
+        console.error("Register Error:", err);
+        res.status(500).json({ message: err.message });
+    } finally {
+        connection.release();
+    }
+});
+
+// 2. Login (for Students and Admins)
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required.' });
+        }
+
+        const [rows] = await db.query(
+            'SELECT * FROM users WHERE email = ? AND password = ?',
+            [email, password]
+        );
+
+        if (rows.length > 0) {
+            const user = rows[0];
+            res.json({ id: user.id, email: user.email, role: user.role });
+        } else {
+            res.status(401).json({ message: 'Invalid email or password.' });
+        }
+    } catch (err) {
+        console.error("Login Error:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// --- ============================ ---
+// --- NEW STUDENT PROFILE ROUTE ---
+// --- ============================ ---
+app.get('/api/my-profile/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // 1. Find the member profile linked to the user ID
+        const [memberRows] = await db.query('SELECT * FROM members WHERE userId = ?', [userId]);
+        if (memberRows.length === 0) {
+            return res.status(404).json({ message: "No library member profile found for this user." });
+        }
+        const member = memberRows[0];
+
+        // 2. Find their borrowed books
+        const [borrowedBooks] = await db.query(
+             'SELECT bookTitle, DATE_FORMAT(dueDate, "%Y-%m-%d") as dueDate FROM borrowed_records WHERE memberId = ?',
+            [member.id]
+        );
+
+        // 3. Return all their data
+        res.json({
+            memberId: member.id,
+            name: member.name,
+            email: member.email,
+            joinDate: member.joinDate,
+            booksBorrowed: member.booksBorrowed,
+            outstandingFines: member.outstandingFines,
+            borrowedBooksList: borrowedBooks
+        });
+
+    } catch (err) {
+        console.error("My Profile Error:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+// --- ============================ ---
+// --- STUDENT BORROW ROUTE ---
+// --- ============================ ---
+app.post('/api/student/borrow', async (req, res) => {
+    const { bookId, dueDate, userId } = req.body;
+
+    let member;
+    try {
+        const [memberRows] = await db.query('SELECT * FROM members WHERE userId = ?', [userId]);
+        if (memberRows.length === 0) {
+            return res.status(403).json({ message: "No library member profile found for this user." });
+        }
+        member = memberRows[0];
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
+    
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+        const [books] = await connection.query('SELECT * FROM books WHERE id = ? AND available > 0 FOR UPDATE', [bookId]);
+        const book = books[0];
+
+        if (!book) {
+            throw new Error('Book is unavailable.');
+        }
+
+        await connection.query('UPDATE books SET available = available - 1 WHERE id = ?', [bookId]);
+        await connection.query('UPDATE members SET booksBorrowed = booksBorrowed + 1 WHERE id = ?', [member.id]);
+        await connection.query(
+            'INSERT INTO borrowed_records (bookId, memberId, bookTitle, memberName, borrowDate, dueDate) VALUES (?, ?, ?, ?, ?, ?)',
+            [book.id, member.id, book.title, member.name, new Date().toISOString().split('T')[0], dueDate]
+        );
+
+        await connection.commit();
+        res.status(201).json({ message: 'Book borrowed successfully!' });
+    } catch (error) {
+        await connection.rollback();
+        console.error("Student Borrow Error:", error);
+        res.status(500).json({ message: error.message || 'Failed to borrow book.' });
+    } finally {
+        connection.release();
+    }
+});
+
+
+// --- (All other routes remain the same) ---
 
 // Book routes
 app.get('/api/books', async (req, res) => {
     try {
         const { q } = req.query;
-        let sql = 'SELECT * FROM books';
+        let sql = 'SELECT id, title, author, isbn, genre, year, copies, available, coverImageURL FROM books';
         const params = [];
         if (q) {
             sql += ' WHERE title LIKE ? OR author LIKE ?';
@@ -64,47 +220,43 @@ app.get('/api/books/:id', async (req, res) => {
 
 app.post('/api/books', async (req, res) => {
     try {
-        const { title, author, isbn, genre, year, copies } = req.body;
-        // This check is good, but the frontend check is more user-friendly
+        const { title, author, isbn, genre, year, copies, coverImageURL } = req.body;
         if (!title || !author || !copies) {
              return res.status(400).json({ message: "Title, author, and copies are required." });
         }
         const [result] = await db.query(
-            'INSERT INTO books (title, author, isbn, genre, year, copies, available) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [title, author, isbn || null, genre || null, year || null, copies, copies]
+            'INSERT INTO books (title, author, isbn, genre, year, copies, available, coverImageURL) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [title, author, isbn || null, genre || null, year || null, copies, copies, coverImageURL || null]
         );
-        res.status(201).json({ id: result.insertId, title, author, isbn, genre, year, copies, available: copies });
+        res.status(201).json({ id: result.insertId, title, author, isbn, genre, year, copies, available: copies, coverImageURL });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// --- BOOK EDIT ROUTE ---
 app.put('/api/books/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, author, isbn, genre, year, copies } = req.body;
+        const { title, author, isbn, genre, year, copies, coverImageURL } = req.body;
         
         if (!title || !author || !copies) {
              return res.status(400).json({ message: "Title, author, and copies are required." });
         }
 
-        // Get the current book to calculate copy changes
         const [rows] = await db.query('SELECT * FROM books WHERE id = ?', [id]);
         if (rows.length === 0) {
             return res.status(404).json({ message: "Book not found" });
         }
         const oldBook = rows[0];
 
-        // Calculate the difference in copies
         const copyChange = (copies || oldBook.copies) - oldBook.copies;
         const newAvailable = oldBook.available + copyChange;
 
         if (newAvailable < 0) {
             return res.status(400).json({ message: "Cannot reduce copies below the number currently borrowed." });
         }
-
+        
         const [result] = await db.query(
-            'UPDATE books SET title = ?, author = ?, isbn = ?, genre = ?, year = ?, copies = ?, available = ? WHERE id = ?',
-            [title, author, isbn || null, genre || null, year || null, copies, newAvailable, id]
+            'UPDATE books SET title = ?, author = ?, isbn = ?, genre = ?, year = ?, copies = ?, available = ?, coverImageURL = ? WHERE id = ?',
+            [title, author, isbn || null, genre || null, year || null, copies, newAvailable, coverImageURL || null, id]
         );
 
         if (result.affectedRows > 0) {
@@ -167,7 +319,6 @@ app.post('/api/members', async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// --- MEMBER EDIT ROUTE ---
 app.put('/api/members/:id', async (req, res) => {
     try {
         const { id } = req.params;
