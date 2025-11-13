@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <style>
+        /* General Styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: #f4f7f9; /* Light grey background */
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #ffffff; /* White container */
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #3b82f6; /* Medium blue header */
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2em; }
+        .nav-tabs {
+            display: flex;
+            background: #eef2f5; /* Lighter grey for tabs background */
+            padding: 0;
+            border-bottom: 2px solid #d1d5db; /* Light grey border */
+            flex-wrap: wrap;
+        }
+        .nav-tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            color: #4b5563; /* Darker grey text */
+            transition: background-color 0.2s ease, color 0.2s ease;
+            text-align: center;
+        }
+        .nav-tab:hover {
+            background-color: #dbeafe; /* Light blue hover */
+            color: #1d4ed8; /* Darker blue text */
+        }
+        .nav-tab.active {
+            background: #ffffff;
+            color: #2563eb; /* Active tab blue text */
+            font-weight: 600;
+            border-bottom: 3px solid #3b82f6; /* Active tab blue border */
+            margin-bottom: -2px; /* Align border */
+        }
+        .content { padding: 30px; min-height: 500px; }
+
+        /* Forms */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #374151; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db; /* Grey border */
+            border-radius: 8px;
+            font-size: 16px;
+            background-color: #fff;
+            transition: border-color 0.2s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue border on focus */
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 5px;
+            color: white;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        /* Make edit button slightly different */
+        .btn-primary { background-color: #3b82f6; } .btn-primary:hover { background-color: #2563eb; box-shadow: 0 2px 5px rgba(59, 130, 246, 0.3); }
+        .btn-success { background-color: #10b981; } .btn-success:hover { background-color: #059669; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3); }
+        .btn-danger { background-color: #ef4444; } .btn-danger:hover { background-color: #dc2626; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3); }
+        .btn-warning { background-color: #f59e0b; color: #fff; } .btn-warning:hover { background-color: #d97706; box-shadow: 0 2px 5px rgba(245, 158, 11, 0.3); }
+
+        /* Tables */
+        .table-container { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e5e7eb; /* Lighter grey border */ }
+        thead tr { background-color: #f9fafb; /* Very light grey header */ color: #374151; font-weight: 600; text-transform: uppercase; font-size: 0.9em; letter-spacing: 0.5px;}
+        tbody tr { transition: background-color 0.15s ease; }
+        /* Add cursor for member row click */
+        tbody tr.clickable:hover { background-color: #f3f4f6; cursor: pointer; }
+
+        /* Search Filter */
+        .filter-container { margin-bottom: 20px; max-width: 400px; }
+        .filter-container input { width: 100%; padding: 10px 15px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; }
+
+        /* --- NEW MODAL STYLES (from your demo) --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background-color: #fff; padding: 30px; width: 90%; max-width: 550px; border-radius: 10px; position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.2); animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-close { color: #9ca3af; position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; } .modal-close:hover { color: #374151; }
+        #member-borrowed-list { list-style: none; padding: 0; margin-top: 15px; max-height: 200px; overflow-y: auto; }
+        #member-borrowed-list li { background: #f3f4f6; padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 0.95em;}
+        #member-borrowed-list strong { color: #1d4ed8; }
+        .modal h2 { margin-bottom: 15px; color: #1f2937; }
+        /* --- END NEW MODAL STYLES --- */
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #ffffff; border: 1px solid #e5e7eb; color: #374151; padding: 25px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); }
+        .stat-number { font-size: 2.2em; font-weight: 600; color: #3b82f6; margin-bottom: 5px; }
+
+        /* Alerts (from your design) */
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid transparent; }
+        .alert-success { background-color: #d1fae5; border-color: #a7f3d0; color: #065f46; }
+        .alert-error { background-color: #fee2e2; border-color: #fecaca; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>📚 Library Management System</h1></div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab(event, 'dashboard')">Dashboard</button>
+            <button class="nav-tab" onclick="showTab(event, 'books')">Books</button>
+            <button class="nav-tab" onclick="showTab(event, 'members')">Members</button>
+            <button class="nav-tab" onclick="showTab(event, 'borrow')">Borrow/Return</button>
+            <button class="nav-tab" onclick="showTab(event, 'add-book')">Add Book</button>
+            <button class="nav-tab" onclick="showTab(event, 'add-member')">Add Member</button>
+        </div>
+
+        <div class="content">
+            <div id="alert-container"></div>
+
+            <div id="dashboard" class="tab-content">
+                <h2>Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-number" id="total-books">0</div><div>Total Books</div></div>
+                    <div class="stat-card"><div class="stat-number" id="available-books">0</div><div>Available Books</div></div>
+                    <div class="stat-card"><div class="stat-number" id="borrowed-books">0</div><div>Borrowed Books</div></div>
+                    <div class="stat-card"><div class="stat-number" id="total-members">0</div><div>Total Members</div></div>
+                </div>
+            </div>
+
+            <div id="books" class="tab-content" style="display: none;">
+                <h2>Book Catalog</h2>
+                <div class="filter-container">
+                    <input type="text" id="book-search" onkeyup="loadBooks()" placeholder="🔎 Search by title or author...">
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Title</th><th>Author</th><th>Genre</th><th>Year</th><th>Available</th><th>Actions</th></tr></thead>
+                        <tbody id="books-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="members" class="tab-content" style="display: none;">
+                <h2>Library Members</h2>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Name</th><th>Email</th><th>Outstanding Fines</th><th>Books Borrowed</th><th>Actions</th></tr></thead>
+                        <tbody id="members-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="borrow" class="tab-content" style="display: none;">
+                <h2>Borrow / Return Books</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div><h3>Borrow Book</h3><form id="borrow-form"><div class="form-group"><label>Select Member</label><select id="borrow-member" required></select></div><div class="form-group"><label>Select Book</label><select id="borrow-book" required></select></div><div class="form-group"><label>Return Date</label><input type="date" id="return-date" required></div><button type="submit" class="btn btn-primary">Borrow Book</button></form></div>
+                    <div><h3>Return Book</h3><form id="return-form"><div class="form-group"><label>Select Borrowed Book</label><select id="return-book" required></select></div><button type="submit" class="btn btn-success">Return Book</button></form></div>
+                </div>
+            </div>
+
+            <div id="add-book" class="tab-content" style="display: none;">
+                <h2>Add New Book</h2>
+                <form id="add-book-form" style="max-width: 600px;">
+                    <div class="form-group"><label>Book Title</label><input type="text" id="add-book-title" required></div>
+                    <div class="form-group"><label>Author</label><input type="text" id="add-book-author" required></div>
+                    <div class="form-group"><label>ISBN</label><input type="text" id="add-book-isbn"></div>
+                    <div class="form-group"><label>Genre</label><input type="text" id="add-book-genre"></div>
+                    <div class="form-group"><label>Year Published</label><input type="number" id="add-book-year"></div>
+                    <div class="form-group"><label>Copies</label><input type="number" id="add-book-copies" min="1" value="1" required></div>
+                    <button type="submit" class="btn btn-primary">Add Book</button>
+                </form>
+            </div>
+
+            <div id="add-member" class="tab-content" style="display: none;">
+                <h2>Add New Member</h2>
+                <form id="add-member-form" style="max-width: 600px;">
+                    <div class="form-group"><label>Full Name</label><input type="text" id="add-member-name" required></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="add-member-email"></div>
+                    <button type="submit" class="btn btn-primary">Add Member</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="member-details-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('member-details-modal')">&times;</span>
+            <div id="member-modal-body"></div>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('edit-modal')">&times;</span>
+            <h2 id="edit-modal-title">Edit Details</h2>
+            <form id="edit-form">
+                <div id="edit-form-body"></div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="qr-modal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="modal-close" onclick="closeModal('qr-modal')">&times;</span>
+            <h2 id="qr-modal-title">Pay Outstanding Fine</h2>
+            <p>Please scan the QR code below to pay the fine.</p>
+
+            <img src="qr-code.jpg" alt="UPI QR Code" style="width: 250px; max-width: 80%; margin: 20px auto; display: block;">
+
+            <p style="font-size: 1.2em; font-weight: bold;" id="qr-amount-text"></p>
+            <p style="font-size: 0.9em; color: #666; margin-top: 15px;">After payment is complete, click "Confirm Payment" to clear the fine in the system.</p>
+            <button id="qr-confirm-btn" class="btn btn-success" style="margin-top: 20px;">Confirm Payment</button>
+        </div>
+    </div>
+    <script>
+        // --- API Base ---
+        const API_URL = 'http://localhost:3000/api';
+        let allBooks = [];
+        let allMembers = [];
+        let allBorrowed = [];
+
+        // --- UTILITY FUNCTIONS ---
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.innerHTML = '';
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 4000);
+        }
+
+        const http = {
+            async request(url, method = 'GET', data = null) {
+                try {
+                    const options = {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                    };
+                    if (data) {
+                        options.body = JSON.stringify(data);
+                    }
+                    const response = await fetch(API_URL + url, options);
+
+                    if (response.status === 204) return null;
+
+                    const resData = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(resData.message || 'An error occurred');
+                    }
+                    return resData;
+                } catch (error) {
+                    console.error('API Error:', error.message);
+                    showAlert(`Error: ${error.message}`, 'error');
+                    throw error;
+                }
+            },
+            get: (url) => http.request(url),
+            post: (url, data) => http.request(url, 'POST', data),
+            delete: (url) => http.request(url, 'DELETE'),
+            put: (url, data) => http.request(url, 'PUT'),
+        };
+
+        // --- MODAL FUNCTIONS ---
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // --- Navigation ---
+        function showTab(event, tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabName).style.display = 'block';
+            event.currentTarget.classList.add('active');
+
+            if (tabName === 'dashboard') loadDashboard();
+            if (tabName === 'books') loadBooks();
+            if (tabName === 'members') loadMembers();
+            if (tabName === 'borrow') loadBorrowPage();
+        }
+
+        // --- Dashboard ---
+        async function loadDashboard() {
+            try {
+                const stats = await http.get('/stats');
+                document.getElementById('total-books').textContent = stats.totalBooks;
+                document.getElementById('available-books').textContent = stats.availableBooks;
+                document.getElementById('borrowed-books').textContent = stats.borrowedBooks;
+                document.getElementById('total-members').textContent = stats.totalMembers;
+            } catch (error) {}
+        }
+
+        // --- Books Page ---
+        async function loadBooks() {
+            try {
+                const searchTerm = document.getElementById('book-search').value.toLowerCase();
+                allBooks = await http.get(`/books?q=${searchTerm}`);
+                const tableBody = document.getElementById('books-list');
+                tableBody.innerHTML = '';
+                if (allBooks.length === 0) {
+                     tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No books found.</td></tr>';
+                     return;
+                }
+                allBooks.forEach(book => {
+                    tableBody.innerHTML += `
+                        <tr>
+                            <td>${book.title}</td>
+                            <td>${book.author}</td>
+                            <td>${book.genre || 'N/A'}</td>
+                            <td>${book.year || 'N/A'}</td>
+                            <td>${book.available} / ${book.copies}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="editBook(${book.id})">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteBook(${book.id})">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {}
+        }
+
+        // Add Book Form
+        document.getElementById('add-book-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const book = {
+                title: document.getElementById('add-book-title').value,
+                author: document.getElementById('add-book-author').value,
+                isbn: document.getElementById('add-book-isbn').value,
+                genre: document.getElementById('add-book-genre').value,
+                year: parseInt(document.getElementById('add-book-year').value) || null,
+                copies: parseInt(document.getElementById('add-book-copies').value),
+            };
+
+            // Validation Check
+            if (!book.title || !book.author || !book.copies) {
+                showAlert('Title, Author, and Copies are required fields.', 'error');
+                return;
+            }
+
+            try {
+                await http.post('/books', book);
+                showAlert('Book added successfully!', 'success');
+                e.target.reset();
+                loadBooks();
+                loadDashboard();
+            } catch (error) {}
+        });
+
+        async function deleteBook(id) {
+            if (!confirm('Are you sure you want to delete this book?')) return;
+            try {
+                await http.delete(`/books/${id}`);
+                showAlert('Book deleted successfully!', 'success');
+                loadBooks();
+                loadDashboard();
+            } catch (error) {}
+        }
+
+        // --- Members Page ---
+        async function loadMembers() {
+            try {
+                allMembers = await http.get('/members');
+                const tableBody = document.getElementById('members-list');
+                tableBody.innerHTML = '';
+                if (allMembers.length === 0) {
+                     tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No members found.</td></tr>';
+                     return;
+                }
+                allMembers.forEach(member => {
+                    const finesValue = parseFloat(member.outstandingFines) || 0;
+                    const fines = finesValue.toFixed(2);
+                    const borrowed = member.booksBorrowed || 0;
+
+                    tableBody.innerHTML += `
+                        <tr class="clickable" onclick="showMemberDetails(${member.id}, '${member.name}')">
+                            <td>${member.name}</td>
+                            <td>${member.email || 'N/A'}</td>
+                            <td>₹${fines}</td>
+                            <td>${borrowed}</td>
+                            <td onclick="event.stopPropagation()">
+                                <button class="btn btn-primary" onclick="editMember(${member.id})">Edit</button>
+                                <button class="btn btn-warning" onclick="showPayModal(${member.id}, ${finesValue})" ${finesValue <= 0 ? 'disabled' : ''}>Pay Fines</button>
+                                <button class="btn btn-danger" onclick="deleteMember(${member.id})">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Failed to load members:", error);
+                showAlert("Failed to load members: " + error.message, 'error');
+            }
+        }
+
+        // Add Member Form
+        document.getElementById('add-member-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const member = {
+                name: document.getElementById('add-member-name').value,
+                email: document.getElementById('add-member-email').value,
+            };
+
+            // Validation Check
+            if (!member.name) {
+                showAlert('Name is a required field.', 'error');
+                return;
+            }
+
+            try {
+                await http.post('/members', member);
+                showAlert('Member added successfully!', 'success');
+                e.target.reset();
+                loadMembers();
+                loadDashboard();
+            } catch (error) {}
+        });
+
+        async function deleteMember(id) {
+            if (!confirm('Are you sure you want to delete this member?')) return;
+            try {
+                await http.delete(`/members/${id}`);
+                showAlert('Member deleted successfully!', 'success');
+                loadMembers();
+                loadDashboard();
+            } catch (error) {}
+        }
+
+        async function payFines(id) {
+            try {
+                const res = await http.post(`/members/${id}/pay-fines`);
+                showAlert(res.message, 'success');
+                loadMembers(); // Refresh the list
+            } catch (error) {}
+        }
+
+        // --- EDIT AND DETAILS FUNCTIONS ---
+
+        async function showMemberDetails(memberId, memberName) {
+            const modalBody = document.getElementById('member-modal-body');
+            modalBody.innerHTML = `<h2>${memberName}'s Borrows</h2><p>Loading...</p>`;
+            openModal('member-details-modal');
+            try {
+                const memberBooks = await http.get(`/members/${memberId}/borrowed`);
+                let content = `<h2>${memberName}'s Borrows</h2>`;
+                if (memberBooks.length === 0) {
+                    content += '<p>This member has no books currently borrowed.</p>';
+                } else {
+                    content += '<ul id="member-borrowed-list">';
+                    content += memberBooks.map(book => `<li><span>${book.bookTitle}</span><strong>Due: ${book.dueDate}</strong></li>`).join('');
+                    content += '</ul>';
+                }
+                modalBody.innerHTML = content;
+            } catch (error) {
+                modalBody.innerHTML = `<p>Could not load member details.</p>`;
+                showAlert('Could not load member details.', 'error');
+            }
+        }
+
+        function editBook(id) {
+            const book = allBooks.find(b => b.id === id);
+            if (!book) return;
+
+            document.getElementById('edit-modal-title').textContent = "Edit Book";
+            const formBody = document.getElementById('edit-form-body');
+
+            formBody.innerHTML = `
+                <div class="form-group"><label>Book Title</label><input type="text" id="edit-book-title" value="${book.title}" required></div>
+                <div class="form-group"><label>Author</label><input type="text" id="edit-book-author" value="${book.author}" required></div>
+                <div class="form-group"><label>ISBN</label><input type="text" id="edit-book-isbn" value="${book.isbn || ''}"></div>
+                <div class="form-group"><label>Genre</label><input type="text" id="edit-book-genre" value="${book.genre || ''}"></div>
+                <div class="form-group"><label>Year Published</label><input type="number" id="edit-book-year" value="${book.year || ''}"></div>
+                <div class="form-group"><label>Copies</label><input type="number" id="edit-book-copies" value="${book.copies}" min="1" required></div>
+            `;
+
+            document.getElementById('edit-form').onsubmit = (e) => saveBookChanges(e, id);
+            openModal('edit-modal');
+        }
+
+        // Edit Book Form
+        async function saveBookChanges(event, id) {
+            event.preventDefault();
+            const updatedBook = {
+                title: document.getElementById('edit-book-title').value,
+                author: document.getElementById('edit-book-author').value,
+                isbn: document.getElementById('edit-book-isbn').value,
+                genre: document.getElementById('edit-book-genre').value,
+                year: parseInt(document.getElementById('edit-book-year').value) || null,
+                copies: parseInt(document.getElementById('edit-book-copies').value),
+            };
+
+            // Validation Check
+            if (!updatedBook.title || !updatedBook.author || !updatedBook.copies) {
+                showAlert('Title, Author, and Copies cannot be empty.', 'error');
+                return;
+            }
+
+            try {
+                await http.put(`/books/${id}`, updatedBook);
+                closeModal('edit-modal');
+                showAlert('Book updated successfully!', 'success');
+                loadBooks();
+                loadDashboard();
+            } catch (error) {}
+        }
+
+        function editMember(id) {
+            const member = allMembers.find(m => m.id === id);
+            if (!member) return;
+
+            document.getElementById('edit-modal-title').textContent = "Edit Member";
+            const formBody = document.getElementById('edit-form-body');
+
+            formBody.innerHTML = `
+                <div class="form-group"><label>Full Name</label><input type="text" id="edit-member-name" value="${member.name}" required></div>
+                <div class="form-group"><label>Email</label><input type="email" id="edit-member-email" value="${member.email || ''}"></div>
+                <p style="font-size: 0.9em; color: #666;">Fines and borrowed counts are updated automatically by borrow/return actions.</p>
+            `;
+
+            document.getElementById('edit-form').onsubmit = (e) => saveMemberChanges(e, id);
+            openModal('edit-modal');
+        }
+
+        // Edit Member Form
+        async function saveMemberChanges(event, id) {
+            event.preventDefault();
+            const updatedMember = {
+                name: document.getElementById('edit-member-name').value,
+                email: document.getElementById('edit-member-email').value,
+            };
+
+            // Validation Check
+            if (!updatedMember.name) {
+                showAlert('Name cannot be empty.', 'error');
+                return;
+            }
+
+            try {
+                await http.put(`/members/${id}`, updatedMember);
+                closeModal('edit-modal');
+                showAlert('Member updated successfully!', 'success');
+                loadMembers();
+            } catch (error) {}
+        }
+
+        // --- PAYMENT MODAL FUNCTIONS ---
+        function showPayModal(id, amount) {
+            document.getElementById('qr-amount-text').textContent = `Amount to Pay: ₹${amount.toFixed(2)}`;
+            document.getElementById('qr-confirm-btn').dataset.memberId = id;
+            openModal('qr-modal');
+        }
+
+        document.getElementById('qr-confirm-btn').addEventListener('click', async () => {
+            const id = document.getElementById('qr-confirm-btn').dataset.memberId;
+            if (id) {
+                await payFines(parseInt(id));
+                closeModal('qr-modal');
+            }
+        });
+
+
+        // --- Borrow/Return Page ---
+        async function loadBorrowPage() {
+            try {
+                [allBooks, allMembers, allBorrowed] = await Promise.all([
+                    http.get('/books'),
+                    http.get('/members'),
+                    http.get('/borrowed')
+                ]);
+
+                const memberSelect = document.getElementById('borrow-member');
+                memberSelect.innerHTML = '<option value="">Select a Member</option>';
+                allMembers.forEach(m => {
+                    memberSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+                });
+
+                const bookSelect = document.getElementById('borrow-book');
+                bookSelect.innerHTML = '<option value="">Select a Book</option>';
+                allBooks.filter(b => b.available > 0).forEach(b => {
+                    bookSelect.innerHTML += `<option value="${b.id}">${b.title} (by ${b.author})</option>`;
+                });
+
+                const returnSelect = document.getElementById('return-book');
+                returnSelect.innerHTML = '<option value="">Select a Borrowed Book to Return</option>';
+                allBorrowed.forEach(r => {
+                    returnSelect.innerHTML += `<option value="${r.id}">${r.bookTitle} (Borrowed by ${r.memberName})</goption>`;
+                });
+
+                const today = new Date();
+                today.setDate(today.getDate() + 14);
+                document.getElementById('return-date').value = today.toISOString().split('T')[0];
+                document.getElementById('return-date').min = new Date().toISOString().split('T')[0];
+            } catch (error) {}
+        }
+
+        document.getElementById('borrow-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const borrowData = {
+                memberId: parseInt(document.getElementById('borrow-member').value),
+                bookId: parseInt(document.getElementById('borrow-book').value),
+                dueDate: document.getElementById('return-date').value,
+            };
+            try {
+                const res = await http.post('/borrow', borrowData);
+                showAlert(res.message, 'success');
+                e.target.reset();
+                loadBorrowPage();
+                loadDashboard();
+            } catch (error) {}
+        });
+
+        document.getElementById('return-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const returnData = {
+                borrowId: parseInt(document.getElementById('return-book').value),
+            };
+            try {
+                const res = await http.post('/return', returnData);
+                showAlert(res.message, 'success');
+                e.target.reset();
+                loadBorrowPage();
+                loadDashboard();
+                loadMembers();
+            } catch (error) {}
+        });
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+        });
+
+    </script>
+</body>
+</html>
