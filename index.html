@@ -9,12 +9,15 @@
 
         /* General Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { height: 100%; }
         body {
             font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
             background-color: #f4f7f9;
             color: #333;
             min-height: 100vh;
             transition: background-color 0.3s ease;
+            display: flex; /* Helps footer stay at bottom */
+            flex-direction: column; /* Helps footer stay at bottom */
         }
         body.auth-active {
             display: flex;
@@ -30,7 +33,14 @@
             border-radius: 12px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
             overflow: hidden;
+            width: 100%; /* Ensure it takes width */
         }
+        /* Make app container grow to fill space */
+        #app-container {
+            flex-grow: 1; 
+            display: none; /* JS will show this */
+        }
+
         .header {
             background-color: #3b82f6;
             color: white;
@@ -182,6 +192,7 @@
             border-radius: 12px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
             overflow: hidden;
+            margin: auto; /* Center login box when auth-active */
         }
         .auth-header {
             text-align: center; 
@@ -243,6 +254,27 @@
             #my-account-grid {
                 grid-template-columns: 1fr;
             }
+        }
+
+        /* --- NEW: Footer Styles --- */
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px; /* Pushes it away from content */
+            background-color: #eef2f5;
+            color: #6b7280;
+            font-size: 0.9em;
+            width: 100%;
+        }
+        footer p {
+            margin: 5px 0;
+        }
+        footer a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -434,6 +466,15 @@
             <button id="qr-confirm-btn" class="btn btn-success" style="margin-top: 20px;">Confirm Payment</button>
         </div>
     </div>
+    <footer>
+        <p>Contact Us:</p>
+        <p>
+            Phone: <a href="tel:8287971046">8287971046</a> | <a href="tel:7876888450">7876888450</a>
+        </p>
+        <p>
+            Email: <a href="mailto:hdas46070@gmail.com">hdas46070@gmail.com</a>
+        </p>
+    </footer>
     <script>
         // --- API Base ---
         const API_URL = 'http://localhost:3000/api';
@@ -874,15 +915,17 @@
             document.getElementById('edit-modal-title').textContent = "Edit Book";
             const formBody = document.getElementById('edit-form-body');
 
+            // --- THIS IS THE LINE WITH THE FIX ---
             formBody.innerHTML = `
                 <div class="form-group"><label>Book Title</label><input type="text" id="edit-book-title" value="${book.title}" required></div>
                 <div class="form-group"><label>Author</label><input type="text" id="edit-book-author" value="${book.author}" required></div>
-                <div class.form-group"><label>ISBN</label><input type="text" id="edit-book-isbn" value="${book.isbn || ''}"></div>
+                <div class="form-group"><label>ISBN</label><input type="text" id="edit-book-isbn" value="${book.isbn || ''}"></div>
                 <div class="form-group"><label>Cover Image URL</label><input type="text" id="edit-book-cover" value="${book.coverImageURL || ''}"></div>
                 <div class="form-group"><label>Genre</label><input type="text" id="edit-book-genre" value="${book.genre || ''}"></div>
                 <div class="form-group"><label>Year Published</label><input type="number" id="edit-book-year" value="${book.year || ''}"></div>
                 <div class="form-group"><label>Copies</label><input type="number" id="edit-book-copies" value="${book.copies}" min="1" required></div>
             `;
+            // --- END FIX ---
 
             document.getElementById('edit-form').onsubmit = (e) => saveBookChanges(e, id);
             openModal('edit-modal');
@@ -969,7 +1012,7 @@
         });
 
 
-        // --- Borrow/Return Page ---
+        // --- Borrow/Return Page (UPDATED with DATE FIX) ---
         async function loadBorrowPage() {
             try {
                 [allBooks, allMembers, allBorrowed] = await Promise.all([
@@ -996,10 +1039,27 @@
                     returnSelect.innerHTML += `<option value="${r.id}">${r.bookTitle} (Borrowed by ${r.memberName})</goption>`;
                 });
 
+                // --- DATE FIX STARTS HERE ---
+                
+                // Helper to format a date as YYYY-MM-DD
+                const formatDate = (date) => {
+                    const year = date.getFullYear();
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const day = date.getDate().toString().padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                }
+
+                // 1. Set the minimum date to today (local)
                 const today = new Date();
-                today.setDate(today.getDate() + 14);
-                document.getElementById('return-date').value = today.toISOString().split('T')[0];
-                document.getElementById('return-date').min = new Date().toISOString().split('T')[0];
+                document.getElementById('return-date').min = formatDate(today);
+
+                // 2. Set the default value to 2 weeks from now (local)
+                const defaultDueDate = new Date();
+                defaultDueDate.setDate(defaultDueDate.getDate() + 14);
+                document.getElementById('return-date').value = formatDate(defaultDueDate);
+                
+                // --- DATE FIX ENDS HERE ---
+
             } catch (error) {}
         }
 
