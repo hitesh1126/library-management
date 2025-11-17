@@ -66,6 +66,7 @@
             flex-wrap: wrap;
         }
         .nav-tab {
+            /* flex: 1; <-- This was removed to make tabs fit content */
             min-width: 120px;
             padding: 15px 25px; 
             background: none;
@@ -321,6 +322,20 @@
         footer a:hover {
             text-decoration: underline;
         }
+
+        /* --- NEW: Genre Heading Style --- */
+        .genre-heading {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #eef2f5;
+        }
+        .genre-heading:first-child {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body class="auth-active"> 
@@ -421,23 +436,9 @@
             <div id="books" class="tab-content" style="display: none;">
                 <h2>Book Catalog</h2>
                 <div class="filter-container">
-                    <input type="text" id="book-search" onkeyup="loadBooks()" placeholder="🔎 Search by title or author...">
+                    <input type="text" id="book-search" onkeyup="loadBooks()" placeholder="🔎 Search by title, author, genre, or year...">
                 </div>
-                <div class="table-container">
-                    <table>
-                        <thead><tr>
-                            <th>Cover</th>
-                            <th>Title</th>
-                            <th>Author</th>
-                            <th>Genre</th>
-                            <th>Year</th>
-                            <th>Available</th>
-                            <th class="admin-only">Actions</th>
-                            <th class="student-only">Actions</th>
-                        </tr></thead>
-                        <tbody id="books-list"></tbody>
-                    </table>
-                </div>
+                <div id="books-list"></div>
             </div>
 
             <div id="members" class="tab-content admin-only" style="display: none;">
@@ -654,12 +655,12 @@
                 adminElements.forEach(el => el.style.display = '');
                 studentElements.forEach(el => el.style.display = 'none');
                 document.querySelectorAll('.nav-tab.admin-only').forEach(el => el.style.display = 'block');
-                document.querySelector('th.admin-only').style.display = '';
+                document.querySelectorAll('th.admin-only, td.admin-only').forEach(el => el.style.display = '');
             } else { // Student
                 adminElements.forEach(el => el.style.display = 'none');
                 studentElements.forEach(el => el.style.display = '');
                 document.querySelectorAll('.nav-tab.student-only').forEach(el => el.style.display = 'block');
-                document.querySelector('th.student-only').style.display = '';
+                document.querySelectorAll('th.student-only, td.student-only').forEach(el => el.style.display = '');
             }
             
             showTab(null, 'dashboard');
@@ -771,44 +772,91 @@
             try {
                 const searchTerm = document.getElementById('book-search').value.toLowerCase();
                 allBooks = await http.get(`/books?q=${searchTerm}`);
-                const tableBody = document.getElementById('books-list');
-                tableBody.innerHTML = '';
-                if (allBooks.length === 0) {
-                     tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No books found.</td></tr>';
-                     return;
-                }
+                const listContainer = document.getElementById('books-list');
+                listContainer.innerHTML = ''; // Clear old content
                 
                 const user = JSON.parse(localStorage.getItem('currentUser'));
                 
-                allBooks.forEach(book => {
-                    const isAdmin = user.role === 'admin';
-                    const isAvailable = book.available > 0;
-                    
-                    tableBody.innerHTML += `
-                        <tr>
-                            <td><img src="${book.coverImageURL || 'https://via.placeholder.com/50x70.png?text=No+Image'}" alt="Cover" class="book-cover-img"></td>
-                            <td>${book.title}</td>
-                            <td>${book.author}</td>
-                            <td>${book.genre || 'N/A'}</td>
-                            <td>${book.year || 'N/A'}</td>
-                            <td>${book.available} / ${book.copies}</td>
-                            
-                            ${isAdmin ? `
-                            <td class="admin-only">
-                                <button class="btn btn-primary" onclick="editBook(${book.id})">Edit</button>
-                                <button class="btn btn-danger" onclick="deleteBook(${book.id})">Delete</button>
-                            </td>
-                            ` : `
-                            <td class="student-only">
-                                <button class="btn btn-success" onclick="studentBorrow(${book.id})" ${!isAvailable ? 'disabled' : ''}>
-                                    ${isAvailable ? 'Borrow' : 'Unavailable'}
-                                </button>
-                            </td>
-                            `}
-                        </tr>
-                    `;
-                });
-            } catch (error) {}
+                // Group books by genre
+                const booksByGenre = allBooks.reduce((acc, book) => {
+                    const genre = book.genre || 'Uncategorized';
+                    if (!acc[genre]) {
+                        acc[genre] = [];
+                    }
+                    acc[genre].push(book);
+                    return acc;
+                }, {});
+
+                if (Object.keys(booksByGenre).length === 0) {
+                     listContainer.innerHTML = '<p style="text-align: center; color: #666;">No books found matching your search.</p>';
+                     return;
+                }
+
+                let html = '';
+                // Loop over each genre and create a table
+                for (const genre in booksByGenre) {
+                    html += `<h3 class="genre-heading">${genre}</h3>`;
+                    html += `<div class="table-container">
+                                <table>
+                                    <thead><tr>
+                                        <th>Cover</th>
+                                        <th>Title</th>
+                                        <th>Author</th>
+                                        <th>Year</th>
+                                        <th>Available</th>
+                                        <th class="${user.role === 'admin' ? 'admin-only' : 'student-only'}">Actions</th>
+                                    </tr></thead>
+                                    <tbody>`;
+
+                    // Loop over books within that genre
+                    booksByGenre[genre].forEach(book => {
+                        const isAdmin = user.role === 'admin';
+                        const isAvailable = book.available > 0;
+                        
+                        html += `
+                            <tr>
+                                <td><img src="${book.coverImageURL || 'https://via.placeholder.com/50x70.png?text=No+Image'}" alt="Cover" class="book-cover-img"></td>
+                                <td>${book.title}</td>
+                                <td>${book.author}</td>
+                                <td>${book.year || 'N/A'}</td>
+                                <td>${book.available} / ${book.copies}</td>
+                                
+                                ${isAdmin ? `
+                                <td class="admin-only">
+                                    <button class="btn btn-primary" onclick="editBook(${book.id})">Edit</button>
+                                    <button class="btn btn-danger" onclick="deleteBook(${book.id})">Delete</button>
+                                </td>
+                                ` : `
+                                <td class="student-only">
+                                    <button class="btn btn-success" onclick="studentBorrow(${book.id})" ${!isAvailable ? 'disabled' : ''}>
+                                        ${isAvailable ? 'Borrow' : 'Unavailable'}
+                                    </button>
+                                </td>
+                                `}
+                            </tr>
+                        `;
+                    });
+
+                    html += `</tbody></table></div>`;
+                }
+                listContainer.innerHTML = html;
+                
+                // Re-apply admin/student visibility just in case
+                // THIS IS THE FIX: We must call this AFTER setting the innerHTML
+                const userRole = JSON.parse(localStorage.getItem('currentUser')).role;
+                if (userRole === 'admin') {
+                    listContainer.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+                    listContainer.querySelectorAll('.student-only').forEach(el => el.style.display = 'none');
+                } else {
+                    listContainer.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                    listContainer.querySelectorAll('.student-only').forEach(el => el.style.display = '');
+                }
+
+            } catch (error) {
+                // --- THIS IS THE FIX ---
+                console.error("Failed to load books:", error);
+                showAlert("Failed to load books: " + error.message, 'error');
+            }
         }
         
         // --- NEW: Student Borrow Function ---

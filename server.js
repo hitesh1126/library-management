@@ -1,4 +1,4 @@
-// File: server.js (MySQL Version with Student Account Page)
+// File: server.js (MySQL Version with Expanded Search)
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
@@ -40,7 +40,7 @@ let db;
 // --- AUTHENTICATION ROUTES ---
 // --- ============================ ---
 
-// 1. Student Registration (NOW UPDATED)
+// 1. Student Registration
 app.post('/api/register', async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
@@ -69,7 +69,7 @@ app.post('/api/register', async (req, res) => {
         res.status(201).json({ id: newUserId, email, role: 'student', name });
         
     } catch (err) {
-        await connection.rollback(); // Undo changes if anything failed
+        await connection.rollback(); 
         if (err.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ message: 'This email is already registered.' });
         }
@@ -80,7 +80,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// 2. Login (for Students and Admins)
+// 2. Login
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -105,27 +105,22 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// --- ============================ ---
-// --- NEW STUDENT PROFILE ROUTE ---
-// --- ============================ ---
+// --- STUDENT PROFILE ROUTE ---
 app.get('/api/my-profile/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         
-        // 1. Find the member profile linked to the user ID
         const [memberRows] = await db.query('SELECT * FROM members WHERE userId = ?', [userId]);
         if (memberRows.length === 0) {
             return res.status(404).json({ message: "No library member profile found for this user." });
         }
         const member = memberRows[0];
 
-        // 2. Find their borrowed books
         const [borrowedBooks] = await db.query(
              'SELECT bookTitle, DATE_FORMAT(dueDate, "%Y-%m-%d") as dueDate FROM borrowed_records WHERE memberId = ?',
             [member.id]
         );
 
-        // 3. Return all their data
         res.json({
             memberId: member.id,
             name: member.name,
@@ -143,9 +138,7 @@ app.get('/api/my-profile/:userId', async (req, res) => {
 });
 
 
-// --- ============================ ---
 // --- STUDENT BORROW ROUTE ---
-// --- ============================ ---
 app.post('/api/student/borrow', async (req, res) => {
     const { bookId, dueDate, userId } = req.body;
 
@@ -189,18 +182,19 @@ app.post('/api/student/borrow', async (req, res) => {
     }
 });
 
-
-// --- (All other routes remain the same) ---
-
-// Book routes
+// --- ============================ ---
+// --- BOOK ROUTES (SEARCH UPDATED) ---
+// --- ============================ ---
 app.get('/api/books', async (req, res) => {
     try {
         const { q } = req.query;
         let sql = 'SELECT id, title, author, isbn, genre, year, copies, available, coverImageURL FROM books';
         const params = [];
         if (q) {
-            sql += ' WHERE title LIKE ? OR author LIKE ?';
-            params.push(`%${q}%`, `%${q}%`);
+            // --- UPDATED THIS SECTION ---
+            sql += ' WHERE title LIKE ? OR author LIKE ? OR genre LIKE ? OR year LIKE ?';
+            params.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`);
+            // --- END OF UPDATE ---
         }
         const [rows] = await db.query(sql, params);
         res.json(rows);
@@ -285,6 +279,8 @@ app.delete('/api/books/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+
+// --- (All other routes remain the same) ---
 
 // Member routes
 app.get('/api/members', async (req, res) => {
